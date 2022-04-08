@@ -6,6 +6,10 @@ __pycache__/
 # C extensions
 *.so
 
+# hsfs credentials
+material_passwd
+*.jks
+
 # Distribution / packaging
 .Python
 build/
