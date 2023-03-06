@@ -24,12 +24,12 @@ model = joblib.load(model_dir + "/lending_model.pkl")
 
 fv = fs.get_feature_view("loans", version=1)
 
-#purpose = ['vacation', 'debt_consolidation', 'credit_card','home_improvement', 'small_business', 'major_purchase', 'other',
-#       'medical', 'wedding', 'car', 'moving', 'house', 'educational','renewable_energy']
-#term = [' 36 months', ' 60 months']
+purpose = ['vacation', 'debt_consolidation', 'credit_card','home_improvement', 'small_business', 'major_purchase', 'other',
+       'medical', 'wedding', 'car', 'moving', 'house', 'educational','renewable_energy']
+term = [' 36 months', ' 60 months']
 
 
-fv.init_serving(training_dataset_version=4)
+fv.init_serving(training_dataset_version=1)
 
 def approve_loan(id, term, purpose, loan_amnt, int_rate):
     input_list = []
@@ -57,12 +57,16 @@ demo = gr.Interface(
     description="Enter your details to see if your loan will be approved or not.",
     allow_flagging="never",
     inputs=[
-        gr.inputs.Number(label="id"),
-        gr.inputs.Dropdown(label="term", options=term),
-        gr.inputs.Dropdown(label="purpose", options=purpose),
-        gr.inputs.Number(default=1000, label="loan_amnt"),
-        gr.inputs.Number(default=4.0, label="int_rate"),
+        gr.Number(label="id"),
+        gr.Dropdown(term, label="term"),
+        gr.Dropdown(purpose, label="purpose"),
+        gr.Number(default=1000, label="loan_amnt"),
+        gr.Number(default=4.0, label="int_rate"),
         ],
+    examples=[
+        [390, "36 months" , "home_improvement", 5000, 4.5],
+    ],
     outputs=gr.Image(type="pil"))
 
 demo.launch()
+
