@@ -34,13 +34,16 @@ term = [' 36 months', ' 60 months']
 fv.init_serving(training_dataset_version=1)
 print("Initialized feature view for serving")
 
-def approve_loan(id, term, purpose, loan_amnt, int_rate):
+def approve_loan(id, term, purpose, zip_code, loan_amnt, int_rate):
     input_list = []
     #input_list.append(f2)
     encoded_term = term
     encoded_purpose = purpose
     encoded_loan_amnt = loan_amnt
     encoded_int_rate = int_rate
+    validated_zip_code = loans.validate_zipcode(zip_code)
+    if validated_zip_code == 0:
+        raise Exception('Invalid zip code. It should have 5 digits')
     print("Requesting Feature Vector")
     arr = fv.get_feature_vector({"id": id})
     print("Received Feature Vector: {}".format(arr))
@@ -52,15 +55,11 @@ def approve_loan(id, term, purpose, loan_amnt, int_rate):
            'mort_acc':arr[18], 'pub_rec_bankruptcies':arr[19], 'zip_code' : arr[20]} 
 
     print(dict)    
-    arr = fv.get_feature_vector({"id": id}, passed_features={"term": encoded_term, "purpose": encoded_purpose, "loan_amnt": encoded_loan_amnt, "int_rate": encoded_int_rate})
+    arr = fv.get_feature_vector({"id": id}, passed_features={"term": encoded_term, "purpose": encoded_purpose,
+                                                             "zip_code": validated_zip_code,
+                                                             "loan_amnt": encoded_loan_amnt, 
+                                                             "int_rate": encoded_int_rate})
     print("Received Feature Vector: {}".format(arr))
-    # Drop event_time column
-#     input_features = np.array(input_features)
-#     index = 11
-#     input_features = np.delete(input_features, index)
-#     # Drop primary_key column
-#     index = 21
-#     input_features = np.delete(input_features, index)
 
     dict = {'earliest_cr_line_year': arr[0], 'loan_amnt': arr[1], 'term': arr[2], 'int_rate': arr[3],
            'installment':arr[4], 'sub_grade':arr[5], 'home_ownership':arr[6], 'annual_inc':arr[7], 
@@ -92,11 +91,12 @@ demo = gr.Interface(
         gr.Number(label="id"),
         gr.Dropdown(term, label="term"),
         gr.Dropdown(purpose, label="purpose"),
+        gr.Number(label="zip_code"),
         gr.Number(label="loan_amnt"),
         gr.Number(label="int_rate"),
         ],
     examples=[
-        [2222, "36 months","home_improvement", 5000, 4.5],
+        [2222, "36 months","home_improvement", 45725, 5000, 4.5],
     ],
     outputs=gr.Image(type="pil"))
 

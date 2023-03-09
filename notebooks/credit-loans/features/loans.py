@@ -2,7 +2,7 @@ import pandas as pd
 import datetime
 import numpy as np
 
-def home_ownership_udf(home_ownership: str)-> str:
+def home_ownership(home_ownership: str)-> str:
     if (home_ownership == 'ANY' or home_ownership == 'NONE') :
         return 'OTHER'
     return home_ownership
@@ -33,17 +33,23 @@ def pub_rec_bankruptcies(number):
         return number
 
 
-def fill_mort_acc(total_acc, mort_acc, total_acc_avg):
+def mort_acc(total_acc, mort_acc, total_acc_avg):
     if np.isnan(mort_acc):
         return total_acc_avg[total_acc].round()
     else:
         return mort_acc
 
 
-def extract_zipcode(address):
-    return address[-5:]
+def zipcode(zip_code):
+    print("zip code: {}".format(zip_code))
+    zip_code=int(zip_code)
+    l=len(str(zip_code))
+    print("zip code len is {}".format(l))
+    if l==5:
+        return str(zip_code)
+    return "0"
 
 
-def extract_year(earliest_cr_line):
+def earliest_cr_line(earliest_cr_line):
     return earliest_cr_line.year
 
