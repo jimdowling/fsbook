@@ -33,13 +33,14 @@ def pub_rec_bankruptcies(number):
         return number
 
 
-def mort_acc(total_acc, mort_acc, total_acc_avg):
+def fill_mort_acc(total_acc, mort_acc, total_acc_avg):
     if np.isnan(mort_acc):
         return total_acc_avg[total_acc].round()
     else:
         return mort_acc
 
 
+# On-Demand feature function
 def zipcode(zip_code):
     print("zip code: {}".format(zip_code))
     zip_code=int(zip_code)

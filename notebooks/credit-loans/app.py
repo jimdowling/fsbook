@@ -20,18 +20,18 @@ fs = project.get_feature_store()
 
 
 mr = project.get_model_registry()
-model = mr.get_model("lending_model", version=5)
+model = mr.get_model("lending_model", version=7)
 model_dir = model.download()
 model = joblib.load(model_dir + "/lending_model.pkl")
 
-fv = fs.get_feature_view("loans", version=3)
+fv = fs.get_feature_view("loans", version=1)
 
 purpose = ['vacation', 'debt_consolidation', 'credit_card','home_improvement', 'small_business', 'major_purchase', 'other',
        'medical', 'wedding', 'car', 'moving', 'house', 'educational','renewable_energy']
 term = [' 36 months', ' 60 months']
 
 
-fv.init_serving(training_dataset_version=1)
+fv.init_serving(training_dataset_version=4)
 print("Initialized feature view for serving")
 
 def approve_loan(id, term, purpose, zip_code, loan_amnt, int_rate):
@@ -41,9 +41,13 @@ def approve_loan(id, term, purpose, zip_code, loan_amnt, int_rate):
     encoded_purpose = purpose
     encoded_loan_amnt = loan_amnt
     encoded_int_rate = int_rate
-    validated_zip_code = loans.validate_zipcode(zip_code)
+    
+    # On-demand feature function used to create the zip_code feature
+    validated_zip_code = loans.zipcode(zip_code)
     if validated_zip_code == 0:
         raise Exception('Invalid zip code. It should have 5 digits')
+        
+        
     print("Requesting Feature Vector")
     arr = fv.get_feature_vector({"id": id})
     print("Received Feature Vector: {}".format(arr))
@@ -69,11 +73,14 @@ def approve_loan(id, term, purpose, zip_code, loan_amnt, int_rate):
            'mort_acc':arr[18], 'pub_rec_bankruptcies':arr[19], 'zip_code' : arr[20]} 
 
     print(dict)
+
     
     df = pd.DataFrame([dict])
     y_pred = model.predict(df)
     print("Prediction: {}".format(y_pred))
     #res = model.predict(np.asarray(input_features).reshape(1, -1)) 
+    #np.asarray(feature_vector).reshape(1, -1)
+    
     # We add '[0]' to the result of the transformed 'res', because 'res' is a list, and we only want 
     # the first element.
     loan_res_url = "https://icl-blog.s3.ap-southeast-1.amazonaws.com/uploads/2015/01/loan_approved.jpg"
