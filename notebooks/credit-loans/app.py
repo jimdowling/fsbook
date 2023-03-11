@@ -15,26 +15,49 @@ os.environ['HOPSWORKS_PROJECT']="deloitte"
 os.environ['HOPSWORKS_HOST']="6a525ee0-91d8-11ed-9cc8-9fe82dc2b6fd.cloud.hopsworks.ai"
 os.environ['HOPSWORKS_API_KEY']=key
 
+# +
+import time
+start_time = time.time()
+
 project = hopsworks.login()
 fs = project.get_feature_store()
 
+print("Login Hopsworks %s seconds ---" % (time.time() - start_time))
+
+
+
+# +
+start_time = time.time()
 
 mr = project.get_model_registry()
 model = mr.get_model("lending_model", version=7)
 model_dir = model.download()
 model = joblib.load(model_dir + "/lending_model.pkl")
 
+print("Download model %s seconds ---" % (time.time() - start_time))
+
+# +
+start_time = time.time()
+
 fv = fs.get_feature_view("loans", version=1)
+# -
 
 purpose = ['vacation', 'debt_consolidation', 'credit_card','home_improvement', 'small_business', 'major_purchase', 'other',
        'medical', 'wedding', 'car', 'moving', 'house', 'educational','renewable_energy']
 term = [' 36 months', ' 60 months']
 
 
+# +
 fv.init_serving(training_dataset_version=4)
-print("Initialized feature view for serving")
+
+print("Initialized feature view %s seconds ---" % (time.time() - start_time))
+
+
+# -
 
 def approve_loan(id, term, purpose, zip_code, loan_amnt, int_rate):
+    start_time = time.time()
+    
     input_list = []
     #input_list.append(f2)
     encoded_term = term
@@ -48,17 +71,6 @@ def approve_loan(id, term, purpose, zip_code, loan_amnt, int_rate):
         raise Exception('Invalid zip code. It should have 5 digits')
         
         
-    print("Requesting Feature Vector")
-    arr = fv.get_feature_vector({"id": id})
-    print("Received Feature Vector: {}".format(arr))
-    dict = {'earliest_cr_line_year': arr[0], 'loan_amnt': arr[1], 'term': arr[2], 'int_rate': arr[3],
-           'installment':arr[4], 'sub_grade':arr[5], 'home_ownership':arr[6], 'annual_inc':arr[7], 
-            'verification_status': arr[8], 'purpose': arr[9], 'dti':arr[10], 'open_acc':arr[11], 
-           'pub_rec':arr[12], 'revol_bal':arr[13], 'revol_util':arr[14], 'total_acc':arr[15], 
-            'initial_list_status' : arr[16], 'application_type': arr[17],
-           'mort_acc':arr[18], 'pub_rec_bankruptcies':arr[19], 'zip_code' : arr[20]} 
-
-    print(dict)    
     arr = fv.get_feature_vector({"id": id}, passed_features={"term": encoded_term, "purpose": encoded_purpose,
                                                              "zip_code": validated_zip_code,
                                                              "loan_amnt": encoded_loan_amnt, 
@@ -71,15 +83,14 @@ def approve_loan(id, term, purpose, zip_code, loan_amnt, int_rate):
            'pub_rec':arr[12], 'revol_bal':arr[13], 'revol_util':arr[14], 'total_acc':arr[15], 
             'initial_list_status' : arr[16], 'application_type': arr[17],
            'mort_acc':arr[18], 'pub_rec_bankruptcies':arr[19], 'zip_code' : arr[20]} 
-
     print(dict)
-
-    
     df = pd.DataFrame([dict])
     y_pred = model.predict(df)
     print("Prediction: {}".format(y_pred))
-    #res = model.predict(np.asarray(input_features).reshape(1, -1)) 
-    #np.asarray(feature_vector).reshape(1, -1)
+
+    print("Prediction time %s seconds ---" % (time.time() - start_time))    
+
+    #y_pred = model.predict(np.asarray(arr).reshape(1, -1)) 
     
     # We add '[0]' to the result of the transformed 'res', because 'res' is a list, and we only want 
     # the first element.
