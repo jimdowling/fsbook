@@ -30,7 +30,7 @@ print("Login Hopsworks %s seconds ---" % (time.time() - start_time))
 start_time = time.time()
 
 mr = project.get_model_registry()
-model = mr.get_model("lending_model", version=7)
+model = mr.get_model("lending_model", version=8)
 model_dir = model.download()
 model = joblib.load(model_dir + "/lending_model.pkl")
 
@@ -52,9 +52,7 @@ fv.init_serving(training_dataset_version=4)
 
 print("Initialized feature view %s seconds ---" % (time.time() - start_time))
 
-
-# -
-
+# +
 def approve_loan(id, term, purpose, zip_code, loan_amnt, int_rate):
     start_time = time.time()
     
@@ -77,20 +75,19 @@ def approve_loan(id, term, purpose, zip_code, loan_amnt, int_rate):
                                                              "int_rate": encoded_int_rate})
     print("Received Feature Vector: {}".format(arr))
 
-    dict = {'earliest_cr_line_year': arr[0], 'loan_amnt': arr[1], 'term': arr[2], 'int_rate': arr[3],
-           'installment':arr[4], 'sub_grade':arr[5], 'home_ownership':arr[6], 'annual_inc':arr[7], 
-            'verification_status': arr[8], 'purpose': arr[9], 'dti':arr[10], 'open_acc':arr[11], 
-           'pub_rec':arr[12], 'revol_bal':arr[13], 'revol_util':arr[14], 'total_acc':arr[15], 
-            'initial_list_status' : arr[16], 'application_type': arr[17],
-           'mort_acc':arr[18], 'pub_rec_bankruptcies':arr[19], 'zip_code' : arr[20]} 
-    print(dict)
-    df = pd.DataFrame([dict])
-    y_pred = model.predict(df)
+#     dict = {'earliest_cr_line_year': arr[0], 'loan_amnt': arr[1], 'term': arr[2], 'int_rate': arr[3],
+#            'installment':arr[4], 'sub_grade':arr[5], 'home_ownership':arr[6], 'annual_inc':arr[7], 
+#             'verification_status': arr[8], 'purpose': arr[9], 'dti':arr[10], 'open_acc':arr[11], 
+#            'pub_rec':arr[12], 'revol_bal':arr[13], 'revol_util':arr[14], 'total_acc':arr[15], 
+#             'initial_list_status' : arr[16], 'application_type': arr[17],
+#            'mort_acc':arr[18], 'pub_rec_bankruptcies':arr[19], 'zip_code' : arr[20]} 
+#     print(dict)
+#     df = pd.DataFrame([dict])
+#     y_pred = model.predict(df)
+    y_pred = model.predict(np.asarray(arr).reshape(1, -1)) 
+    
     print("Prediction: {}".format(y_pred))
-
     print("Prediction time %s seconds ---" % (time.time() - start_time))    
-
-    #y_pred = model.predict(np.asarray(arr).reshape(1, -1)) 
     
     # We add '[0]' to the result of the transformed 'res', because 'res' is a list, and we only want 
     # the first element.
@@ -99,6 +96,7 @@ def approve_loan(id, term, purpose, zip_code, loan_amnt, int_rate):
         loan_res_url = "https://elevatecredit.africa/wp-content/uploads/2022/03/download-2.jpg"
     img = Image.open(requests.get(loan_res_url, stream=True).raw)            
     return img
+# -
 
 demo = gr.Interface(
     fn=approve_loan,
